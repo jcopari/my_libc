@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel de Controle - Projeto my_libc</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Calm Harmony (Warm Neutrals) -->
+    <!-- Application Structure Plan: An interactive dashboard layout with a vertical timeline of clickable cards, one for each day of the my_libc project schedule. Clicking a card reveals detailed concepts and a list of functions for that day. This task-oriented structure directly supports the user's goal of progressing through the project sequentially. A top section will feature summary charts for a high-level overview, and a search bar will allow for non-linear exploration of specific functions. -->
+    <!-- Visualization & Content Choices: Report Info: Daily schedule, concepts, function lists. Goal: Visualize project structure and track progress. Viz/Presentation: 1. Bar Chart (Chart.js) showing functions per day to visualize workload. 2. Donut Chart (Chart.js) showing function distribution by category (Memory, String, etc.) to give a conceptual overview. 3. Interactive Cards (HTML/CSS/JS) for daily tasks. Interaction: Click to expand cards, hover on charts, search/filter functions. Justification: This combination provides both a high-level summary and detailed, interactive exploration, enhancing understanding beyond a static document. Library/Method: Chart.js for canvas charts, Vanilla JS for all interactions. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8f7f4;
+            color: #4a4a4a;
+        }
+        .chart-container {
+            position: relative;
+            margin: auto;
+            height: 320px;
+            width: 100%;
+            max-width: 500px;
+        }
+        .task-card {
+            transition: all 0.3s ease-in-out;
+            border-left-width: 4px;
+        }
+        .task-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.07), 0 4px 6px -4px rgb(0 0 0 / 0.07);
+        }
+        .details-content {
+            transition: max-height 0.5s ease-in-out, padding 0.5s ease-in-out;
+            max-height: 0;
+            overflow: hidden;
+        }
+        .task-card.open .details-content {
+            max-height: 1000px; /* Adjust as needed */
+        }
+        .task-card.completed {
+            background-color: #f0fdf4;
+            border-left-color: #22c55e;
+        }
+        .task-card.completed .task-title {
+            text-decoration: line-through;
+            color: #52525b;
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <div class="container mx-auto p-4 md:p-8 max-w-7xl">
+
+        <header class="text-center mb-10">
+            <h1 class="text-4xl md:text-5xl font-bold text-zinc-800">Projeto my_libc</h1>
+            <p class="mt-2 text-lg text-zinc-600">Seu guia interativo de 10 dias para criar sua primeira biblioteca em C.</p>
+        </header>
+
+        <section id="dashboard" class="mb-12">
+            <h2 class="text-2xl font-bold text-zinc-700 mb-6 text-center">Visão Geral do Projeto</h2>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+                <div class="bg-white p-6 rounded-xl shadow-sm">
+                    <h3 class="text-lg font-semibold text-center mb-4 text-zinc-800">Distribuição de Funções por Dia</h3>
+                    <div class="chart-container">
+                        <canvas id="workloadChart"></canvas>
+                    </div>
+                     <p class="text-center text-sm text-zinc-500 mt-4">Este gráfico mostra a quantidade de funções a serem implementadas a cada dia, ajudando a visualizar a distribuição do esforço ao longo do projeto.</p>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-sm">
+                    <h3 class="text-lg font-semibold text-center mb-4 text-zinc-800">Funções por Categoria Conceitual</h3>
+                    <div class="chart-container">
+                        <canvas id="categoryChart"></canvas>
+                    </div>
+                    <p class="text-center text-sm text-zinc-500 mt-4">Aqui vemos a divisão das funções por tipo (manipulação de memória, strings, etc.), oferecendo uma perspectiva sobre as áreas de conhecimento que o projeto aborda.</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="schedule">
+            <h2 class="text-2xl font-bold text-zinc-700 mb-4 text-center">Cronograma de Tarefas</h2>
+            <div class="max-w-3xl mx-auto mb-8">
+                 <p class="text-center text-zinc-600 mb-6">Clique em cada dia para expandir e ver os detalhes do conceito chave e a lista de funções. Use a busca para encontrar rapidamente uma função específica no cronograma.</p>
+                <div class="relative">
+                    <input type="text" id="search-input" placeholder="Buscar função (ex: my_split)..." class="w-full p-3 pl-10 text-zinc-700 bg-white border border-zinc-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition">
+                    <svg class="w-5 h-5 text-zinc-400 absolute top-3.5 left-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
+                    </svg>
+                </div>
+            </div>
+
+            <div id="task-list" class="max-w-3xl mx-auto space-y-4">
+                
+            </div>
+        </section>
+
+    </div>
+
+    <script>
+        const scheduleData = [
+            {
+                day: 1,
+                date: "20 de julho",
+                concept: "A Fundação (Setup e Regras)",
+                details: "O primeiro passo é preparar o ambiente de desenvolvimento. Isso envolve criar um `Makefile` para automatizar a compilação, entender o comando `ar` para criar a biblioteca estática (`.a`), e habituar-se com as flags de compilação que forçam a escrita de um código limpo e robusto. O uso de funções `static` para helpers é uma boa prática para organizar o código e evitar conflitos de nomes.",
+                functions: [],
+                category: 'Setup'
+            },
+            {
+                day: 2,
+                date: "21 de julho",
+                concept: "A Lógica Booleana (Verificação de Caracteres)",
+                details: "O computador representa caracteres como números através da tabela ASCII. Estas funções operam verificando se o valor numérico de um caractere está dentro de um intervalo específico para determinar se é uma letra, um dígito, etc. É a base da manipulação de dados textuais.",
+                functions: [
+                    { name: 'my_isalpha', desc: 'Verifica se um caractere é uma letra.' },
+                    { name: 'my_isdigit', desc: 'Verifica se um caractere é um dígito.' },
+                    { name: 'my_isalnum', desc: 'Verifica se um caractere é alfanumérico.' },
+                    { name: 'my_isascii', desc: 'Verifica se um caractere pertence à tabela ASCII.' },
+                    { name: 'my_isprint', desc: 'Verifica se um caractere é imprimível.' }
+                ],
+                category: 'Caracteres'
+            },
+            {
+                day: 3,
+                date: "22 de julho",
+                concept: "A Base da Manipulação (Strings e Memória Simples)",
+                details: "Strings em C são arrays de caracteres terminados pelo caractere nulo `\\0`. Funções de memória, por outro lado, operam em blocos de memória brutos (`void *`) por um número `n` de bytes, ignorando o terminador nulo. Entender essa diferença é crucial.",
+                functions: [
+                    { name: 'my_strlen', desc: 'Calcula o comprimento de uma string.' },
+                    { name: 'my_memset', desc: 'Preenche um bloco de memória com um valor.' },
+                    { name: 'my_bzero', desc: 'Zera um bloco de memória.' },
+                    { name: 'my_memcpy', desc: 'Copia um bloco de memória.' },
+                    { name: 'my_toupper', desc: 'Converte um caractere para maiúsculo.' },
+                    { name: 'my_tolower', desc: 'Converte um caractere para minúsculo.' }
+                ],
+                category: 'Memória/String'
+            },
+            {
+                day: 4,
+                date: "23 de julho",
+                concept: "Lógica de Busca e Comparação",
+                details: "Estas funções iteram sobre strings ou memória para encontrar informações ou comparar valores. Elas frequentemente retornam um ponteiro para o local encontrado ou um valor inteiro que representa o resultado da comparação, exigindo um entendimento cuidadoso sobre o que cada valor de retorno significa.",
+                functions: [
+                    { name: 'my_strchr', desc: 'Encontra a primeira ocorrência de um caractere.' },
+                    { name: 'my_strrchr', desc: 'Encontra a última ocorrência de um caractere.' },
+                    { name: 'my_memchr', desc: 'Busca um caractere em um bloco de memória.' },
+                    { name: 'my_strncmp', desc: 'Compara duas strings (até n caracteres).' },
+                    { name: 'my_memcmp', desc: 'Compara dois blocos de memória.' }
+                ],
+                category: 'Memória/String'
+            },
+            {
+                day: 5,
+                date: "24 de julho",
+                concept: "Manipulação Segura e Busca Complexa",
+                details: "Buffer overflow é um dos erros mais comuns e perigosos em C. Funções como `strlcpy` e `strlcat` foram projetadas para prevenir isso, exigindo o tamanho total do buffer de destino. `strnstr` introduz algoritmos de busca de substring, um problema clássico da computação.",
+                functions: [
+                    { name: 'my_strlcpy', desc: 'Copia uma string de forma segura.' },
+                    { name: 'my_strlcat', desc: 'Concatena strings de forma segura.' },
+                    { name: 'my_strnstr', desc: 'Localiza uma substring em uma string.' },
+                    { name: 'my_memmove', desc: 'Copia um bloco de memória de forma segura (lida com sobreposição).' }
+                ],
+                category: 'Memória/String'
+            },
+            {
+                day: 6,
+                date: "25 de julho",
+                concept: "Alocação Dinâmica de Memória",
+                details: "`malloc()` é a ferramenta fundamental para solicitar memória da 'heap' em tempo de execução. Diferente da memória 'stack', a memória da heap deve ser gerenciada manualmente. A regra de ouro é: para cada `malloc`, deve haver um `free` correspondente para evitar vazamentos de memória.",
+                functions: [
+                    { name: 'my_atoi', desc: 'Converte uma string para um inteiro.' },
+                    { name: 'my_calloc', desc: 'Aloca e zera memória.' },
+                    { name: 'my_strdup', desc: 'Duplica uma string usando malloc.' }
+                ],
+                category: 'Alocação'
+            },
+            {
+                day: 7,
+                date: "26 de julho",
+                concept: "As Funções Adicionais (Parte 1)",
+                details: "Esta fase combina as habilidades adquiridas. Você usará `malloc` junto com suas próprias funções de manipulação de strings para construir novas strings a partir de outras. É a aplicação prática de todos os conceitos de memória e strings vistos até agora.",
+                functions: [
+                    { name: 'my_substr', desc: 'Extrai uma substring de uma string.' },
+                    { name: 'my_strjoin', desc: 'Junta duas strings em uma nova.' },
+                    { name: 'my_strtrim', desc: 'Remove caracteres do início e fim de uma string.' }
+                ],
+                category: 'Alocação'
+            },
+            {
+                day: 8,
+                date: "27 de julho",
+                concept: "As Funções Mais Desafiadoras",
+                details: "Estas funções exigem algoritmos mais elaborados e um gerenciamento de memória cuidadoso. `my_split`, em particular, requer múltiplas alocações e um plano para liberar toda a memória em caso de falha no meio do processo, introduzindo o conceito de robustez e tratamento de erros.",
+                functions: [
+                    { name: 'my_split', desc: 'Divide uma string em um array de strings.' },
+                    { name: 'my_itoa', desc: 'Converte um inteiro para uma string.' }
+                ],
+                category: 'Alocação'
+            },
+            {
+                day: 9,
+                date: "28 de julho",
+                concept: "Conceitos Avançados",
+                details: "Ponteiros para funções permitem passar funções como argumentos, tornando o código mais genérico e poderoso. File Descriptors são a interface de baixo nível do sistema operacional para entrada e saída, e `write` é a chamada de sistema fundamental para interagir com eles.",
+                functions: [
+                    { name: 'my_strmapi', desc: 'Aplica uma função a cada caractere para criar uma nova string.' },
+                    { name: 'my_striteri', desc: 'Aplica uma função a cada caractere de uma string (in-place).' },
+                    { name: 'my_putchar_fd', desc: 'Escreve um caractere em um file descriptor.' },
+                    { name: 'my_putstr_fd', desc: 'Escreve uma string em um file descriptor.' },
+                    { name: 'my_putendl_fd', desc: 'Escreve uma string e uma nova linha em um fd.' }
+                ],
+                category: 'Avançado'
+            },
+            {
+                day: 10,
+                date: "29 de julho",
+                concept: "A Parte Bônus (Listas Ligadas)",
+                details: "Listas ligadas são uma estrutura de dados fundamental. Diferente de arrays, elas não precisam de memória contígua. Cada elemento ('nó') contém dados e um ponteiro para o próximo nó. Isso permite criar coleções de dados que podem crescer e encolher dinamicamente com eficiência.",
+                functions: [
+                    { name: 'my_lstnew', desc: 'Cria um novo nó de lista.' },
+                    { name: 'my_lstadd_front', desc: 'Adiciona um nó no início da lista.' },
+                    { name: 'my_lstsize', desc: 'Conta o tamanho da lista.' },
+                    { name: 'my_lstlast', desc: 'Retorna o último nó da lista.' },
+                    { name: 'my_lstadd_back', desc: 'Adiciona um nó no fim da lista.' },
+                    { name: 'my_lstdelone', desc: 'Libera a memória de um nó.' },
+                    { name: 'my_lstclear', desc: 'Libera a memória de toda a lista.' },
+                    { name: 'my_lstiter', desc: 'Aplica uma função a cada nó.' },
+                    { name: 'my_lstmap', desc: 'Cria uma nova lista aplicando uma função a cada nó.' }
+                ],
+                category: 'Bônus'
+            }
+        ];
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const taskList = document.getElementById('task-list');
+            const searchInput = document.getElementById('search-input');
+            let charts = {};
+
+            function renderTasks(filter = '') {
+                taskList.innerHTML = '';
+                const filterLower = filter.toLowerCase();
+
+                scheduleData.forEach(day => {
+                    const hasMatchingFunction = day.functions.some(f => f.name.toLowerCase().includes(filterLower));
+                    const dayMatches = day.concept.toLowerCase().includes(filterLower) || filter === '';
+
+                    if (dayMatches || hasMatchingFunction) {
+                        const card = document.createElement('div');
+                        card.className = 'task-card bg-white rounded-xl shadow-sm border-l-4 border-amber-400 cursor-pointer';
+                        card.dataset.day = day.day;
+
+                        const functionListHtml = day.functions.map(f => `
+                            <li class="flex items-start py-2">
+                                <span class="font-mono bg-amber-100 text-amber-800 text-sm font-semibold mr-3 px-2.5 py-0.5 rounded">${f.name}</span>
+                                <span class="text-zinc-600">${f.desc}</span>
+                            </li>
+                        `).join('');
+
+                        card.innerHTML = `
+                            <div class="p-5">
+                                <div class="flex justify-between items-center">
+                                    <div>
+                                        <p class="text-sm font-medium text-amber-600">${day.date}</p>
+                                        <h3 class="task-title text-xl font-bold text-zinc-800 mt-1">Dia ${day.day}: ${day.concept}</h3>
+                                    </div>
+                                    <svg class="w-6 h-6 text-zinc-400 transform transition-transform" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" /></svg>
+                                </div>
+                            </div>
+                            <div class="details-content">
+                                <div class="px-5 pb-5 pt-2 border-t border-zinc-200">
+                                    <p class="text-zinc-600 mb-4">${day.details}</p>
+                                    <h4 class="font-semibold text-zinc-700 mb-2">Funções a implementar:</h4>
+                                    ${day.functions.length > 0 ? `<ul class="list-none space-y-1">${functionListHtml}</ul>` : '<p class="text-zinc-500">Nenhuma função de código para hoje. Foco no setup!</p>'}
+                                </div>
+                            </div>
+                        `;
+                        taskList.appendChild(card);
+                    }
+                });
+            }
+
+            function setupEventListeners() {
+                taskList.addEventListener('click', (e) => {
+                    const card = e.target.closest('.task-card');
+                    if (card) {
+                        card.classList.toggle('open');
+                        const icon = card.querySelector('svg');
+                        icon.classList.toggle('rotate-180');
+                    }
+                });
+
+                searchInput.addEventListener('input', (e) => {
+                    renderTasks(e.target.value);
+                });
+            }
+
+            function createCharts() {
+                const workloadCtx = document.getElementById('workloadChart').getContext('2d');
+                const categoryCtx = document.getElementById('categoryChart').getContext('2d');
+
+                const workloadData = {
+                    labels: scheduleData.map(d => `Dia ${d.day}`),
+                    datasets: [{
+                        label: 'Nº de Funções',
+                        data: scheduleData.map(d => d.functions.length),
+                        backgroundColor: 'rgba(245, 158, 11, 0.6)',
+                        borderColor: 'rgba(217, 119, 6, 1)',
+                        borderWidth: 1,
+                        borderRadius: 4,
+                    }]
+                };
+
+                const categoryDataRaw = scheduleData.reduce((acc, day) => {
+                    const category = day.category;
+                    if (category !== 'Setup') {
+                        acc[category] = (acc[category] || 0) + day.functions.length;
+                    }
+                    return acc;
+                }, {});
+
+                const categoryData = {
+                    labels: Object.keys(categoryDataRaw),
+                    datasets: [{
+                        label: 'Funções',
+                        data: Object.values(categoryDataRaw),
+                        backgroundColor: [
+                            'rgba(251, 146, 60, 0.7)', // amber-400
+                            'rgba(245, 158, 11, 0.7)',  // amber-500
+                            'rgba(217, 119, 6, 0.7)',   // amber-600
+                            'rgba(180, 83, 9, 0.7)',    // amber-700
+                            'rgba(120, 53, 15, 0.7)'    // amber-800
+                        ],
+                        borderColor: '#ffffff',
+                        borderWidth: 2,
+                    }]
+                };
+                
+                charts.workload = new Chart(workloadCtx, {
+                    type: 'bar',
+                    data: workloadData,
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                backgroundColor: '#27272a',
+                                titleFont: { size: 14, weight: 'bold' },
+                                bodyFont: { size: 12 },
+                                displayColors: false,
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                grid: { color: '#e5e7eb' }
+                            },
+                            x: {
+                                grid: { display: false }
+                            }
+                        }
+                    }
+                });
+
+                charts.category = new Chart(categoryCtx, {
+                    type: 'doughnut',
+                    data: categoryData,
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: {
+                                    boxWidth: 12,
+                                    padding: 15,
+                                }
+                            },
+                            tooltip: {
+                                backgroundColor: '#27272a',
+                                titleFont: { size: 14, weight: 'bold' },
+                                bodyFont: { size: 12 },
+                            }
+                        }
+                    }
+                });
+            }
+
+            renderTasks();
+            setupEventListeners();
+            createCharts();
+        });
+    </script>
+
+</body>
+</html>
