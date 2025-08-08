@@ -1,18 +1,19 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   ft_putchar_fd.c                                    :+:      :+:    :+:   */
+/*   ft_putstr_fd.c                                     :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: jcopari- <jcopari-@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2025/08/06 18:34:43 by jcopari-          #+#    #+#             */
-/*   Updated: 2025/08/07 21:14:42 by jcopari-         ###   ########.fr       */
+/*   Created: 2025/08/07 21:16:23 by jcopari-          #+#    #+#             */
+/*   Updated: 2025/08/07 21:22:40 by jcopari-         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "mylibc.h"
 
-void ft_putchar_fd(char c, int fd)
+void ft_putstr_fd(char *s, int fd)
 {
-    write (fd, &c, 1);
+    if(s)
+        write (fd, s, ft_strlen(s));
 }

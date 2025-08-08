@@ -6,7 +6,7 @@
 /*   By: jcopari- <jcopari-@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/08/04 10:08:24 by jcopari-          #+#    #+#             */
-/*   Updated: 2025/08/07 13:33:07 by jcopari-         ###   ########.fr       */
+/*   Updated: 2025/08/07 21:24:22 by jcopari-         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,7 +22,8 @@ int	my_isalpha(int c);
 int my_isascii(int c);
 void ft_putchar_fd(char c, int fd);
 size_t	ft_strlen(const char *str);
+void ft_putstr_fd(char *s, int fd);
+void ft_putendl_fd(char *s, int fd);
 char *ft_strjoin(char const *s1, char const *s2);
-
 
 #endif
