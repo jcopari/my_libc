@@ -6,7 +6,7 @@
 /*   By: jcopari- <jcopari-@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/08/04 10:08:24 by jcopari-          #+#    #+#             */
-/*   Updated: 2025/08/07 21:24:22 by jcopari-         ###   ########.fr       */
+/*   Updated: 2025/08/11 09:44:31 by jcopari-         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,5 +25,6 @@ size_t	ft_strlen(const char *str);
 void ft_putstr_fd(char *s, int fd);
 void ft_putendl_fd(char *s, int fd);
 char *ft_strjoin(char const *s1, char const *s2);
+void ft_striteri(char *s, void (*f)(unsigned int, char*));
 
 #endif

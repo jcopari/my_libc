@@ -1,18 +1,25 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   ft_putchar_fd.c                                    :+:      :+:    :+:   */
+/*   ft_striteri.c                                      :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: jcopari- <jcopari-@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2025/08/06 18:34:43 by jcopari-          #+#    #+#             */
-/*   Updated: 2025/08/11 09:43:55 by jcopari-         ###   ########.fr       */
+/*   Created: 2025/08/11 09:43:42 by jcopari-          #+#    #+#             */
+/*   Updated: 2025/08/11 13:13:00 by jcopari-         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "mylibc.h"
-
-void ft_putchar_fd(char c, int fd)
+void	ft_striteri( char *s, void(*f)(unsigned int, char*))
 {
-    write (fd, &c, 1);
+	unsigned int	i;
+
+	if (!s || !f)
+		return ;
+    i = 0;
+	while (s[i])
+	{
+		f(i, &s[i]);
+		i++;
+	}
 }
